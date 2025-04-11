@@ -1,0 +1,118 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart OTP App</title>
+    <link rel="stylesheet" href="style.css" />
+    
+</head>
+
+<body>
+    <div class="container">
+        <div class="h1"><h1>Smart OTP Login</h1></div>
+        <div class="ps"><p class="p" id="locationInfo">Detecting location...</p></div>
+
+        <input type="email" id="email" placeholder="Email (for South India)" />
+        
+        <input type="tel" id="phone" placeholder="(+91)  Phone Number (for others states)" />
+        
+
+        
+
+
+        <button class="button" onclick="handleLogin()">Send OTP</button>
+
+        <div id="otpSection" class="hidden">
+            <input type="text" id="otpInput" placeholder="Enter OTP" />
+            <button class="button" onclick="verifyOtp()">Verify OTP</button>
+        </div>
+
+        <div class="otps"><p class="otp" id="otpMessage"></p></div>
+    </div>
+
+    <script>
+        const southIndianStates = ['Tamil Nadu', 'Kerala', 'Karnataka', 'Andhra Pradesh', 'Telangana'];
+        let userState = '';
+        let generatedOtp = '';
+
+        async function getUserLocation() {
+            try {
+                const res = await fetch("https://ipinfo.io/json?token=IPinfo"); // Replace with your token
+                const data = await res.json();
+                userState = data.region;
+                document.getElementById("locationInfo").innerText = `Detected location: ${data.city}, ${data.region}`;
+                applyTheme(data.region);
+            } catch (err) {
+                document.getElementById("locationInfo").innerText = "Could not detect location.";
+            }
+        }
+
+        function applyTheme(region) {
+            const hour = new Date().getHours();
+            const isSouth = southIndianStates.includes(region);
+            const isWhiteThemeTime = hour >= 10 && hour <= 12;
+
+            if (isSouth && isWhiteThemeTime) {
+                document.body.classList.add("white-theme");
+            } else {
+                document.body.classList.add("dark-theme");
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+            
+
+            const payload = {
+                region: userState,
+                email,
+                phone
+            };
+
+            try {
+                const res = await fetch("http://localhost:5000/send-otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                generatedOtp = data.otp || ""; // For testing, backend can send OTP back (or store in DB)
+                document.getElementById("otpMessage").innerText = data.message;
+
+                document.getElementById("otpSection").classList.remove("hidden");
+            } catch (err) {
+                document.getElementById("otpMessage").innerText = "Failed to send OTP";
+            }
+        }
+
+        function verifyOtp() {
+            const enteredOtp = document.getElementById("otpInput").value;
+            if (enteredOtp === generatedOtp) {
+                document.getElementById("otpMessage").innerText = "✅ OTP Verified!";
+            } else {
+                document.getElementById("otpMessage").innerText = "❌ Invalid OTP!";
+            }
+        }
+
+        getUserLocation();
+
+
+
+
+
+
+       
+
+
+    </script>
+</body>
+
+</html>
+
